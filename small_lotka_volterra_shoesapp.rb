@@ -3,35 +3,35 @@
 require 'numo/gnuplot'
 
 class Miaona
-  attr_reader :v, :p, :t, :r, :a, :s, :b, :trange, :dt, :p_lim_env, :v_lim_env, :k
+  attr_reader :v, :p, :t, :r, :a, :s, :c, :trange, :dt, :p_lim_env, :v_lim_env, :k
 
-  def initialize(r:, a:, s:, b:, trange:, dt:, p_init:, v_init:, k:)
-    @r = r#1.10   rozrodczość ofiar V
-    @a = a#0.01   skuteczność drapieżnika
-    @s = s#3.10    śmiertelność
-    @b = b#1.15   biomasa => b * a = wzrost drapieżników p
+  def initialize(r:, a:, s:, c:, trange:, dt:, p_init:, v_init:, k:)
+    @r = r.to_f#1.10   rozrodczość ofiar V
+    @a = a.to_f#0.01   skuteczność drapieżnika
+    @s = s.to_f#3.10    śmiertelność
+    @c = c.to_f#b*a#1.15   biomasa => b * a = wzrost drapieżników p
     @trange = trange#[0.0, 30.0]
-    @dt = dt#0.1
-    @P_init = p_init#101.0
-    @V_init = v_init#125.0
+    @dt = dt.to_f#0.1
+    @P_init = p_init.to_f#101.0
+    @V_init = v_init.to_f#125.0
     @v = []
     @p_lim_env = []
     @v_lim_env = []
     @p = []
     @t = []
-    @k = k#pojemność środowiska
+    @k = k.to_f#pojemność środowiska
     solveit
   end
 
   def f_lim_env(v, p)
     dvdt =  @r*v*(1.0-(v/@k))-@a*v*p
-    dpdt = -@s*p+@a*@b*v*p
+    dpdt =  -@s*p+@c*v*p #-@s*p+@a*@b*v*p
     return dvdt, dpdt
   end
 
   def f(v, p)
     dvdt =  @r*v-@a*v*p
-    dpdt = -@s*p+@a*@b*v*p
+    dpdt =  -@s*p+@c*v*p                  #-@s*p+@a*@b*v*p
     return dvdt, dpdt
   end
 
@@ -69,7 +69,7 @@ class Miaona
 
 end
 
-@app=Shoes.app(title: "Small Lotka-Volterra App", height: 750, resizable: true) do
+@app=Shoes.app(title: "Small Lotka-Volterra App", height: 850, width: 850, resizable: true) do
   background darkslategray
 def center(elem)
   top=(elem.parent.height-elem.style[:height])/2
@@ -82,7 +82,7 @@ end
   @path_of_simul_lim_env = "image_start/simul_lim_env.png"
   @width_of_edit_line = 55
   @Plotting_flag = false
-  @r, @a, @s, @b, @trange, @dt, @p_init, @v_init, @k = 1.1, 0.01, 0.1, 0.1, [0.0, 100.0], 0.1, 101.0, 125.0, 10000
+  @r, @a, @s, @c, @trange, @dt, @p_init, @v_init, @k = 1.1, 0.01, 0.1, 0.1, [0.0, 100.0], 0.1, 101.0, 125.0, 10000
   @button_jumping = @button_save_parameters
 
   animate do |i|
@@ -112,9 +112,9 @@ end
       para "s = ", stroke: white
       @param_s = edit_line width: @width_of_edit_line, height: 30
       @param_s.text = "0.1" 
-      para "b = ", stroke: white
-      @param_b = edit_line width: @width_of_edit_line, height: 30
-      @param_b.text = "0.1"
+      para "c = ", stroke: white
+      @param_c = edit_line width: @width_of_edit_line, height: 30
+      @param_c.text = "0.1"
       para "k = ", stroke: white
       @param_k = edit_line width: @width_of_edit_line, height: 30
       @param_k.text = "10000" 
@@ -144,12 +144,12 @@ end
   flow margin_top: 12, margin_bottom: 12 do #1
 
     @button_save_parameters = button "Save parameters!" do 
-      @r, @a, @s, @b, @trange, @dt, @p_init, @v_init, @k  = @param_r.text.to_f, @param_a.text.to_f, @param_s.text.to_f, @param_b.text.to_f, [@param_t1.text.to_f, @param_t2.text.to_f], @param_dt.text.to_f, @param_init_p.text.to_f, @param_init_v.text.to_f, @param_k.text.to_f 
+      @r, @a, @s, @c, @trange, @dt, @p_init, @v_init, @k  = @param_r.text.to_f, @param_a.text.to_f, @param_s.text.to_f, @param_c.text.to_f, [@param_t1.text.to_f, @param_t2.text.to_f], @param_dt.text.to_f, @param_init_p.text.to_f, @param_init_v.text.to_f, @param_k.text.to_f 
       @button_jumping = @button_calculate_simulation
     end
 
     @button_calculate_simulation = button "Calculate simulation!" do 
-      s = Miaona.new(r: @r, a: @a, s: @s, b: @b, 
+      s = Miaona.new(r: @r, a: @a, s: @s, c: @c, 
                      trange: @trange, dt: @dt, 
                      p_init: @p_init, v_init: @v_init, k: @k)
       @v, @p, @t, @v_lim_env, @p_lim_env = s.v, s.p, s.t, s.v_lim_env, s.p_lim_env
@@ -163,11 +163,11 @@ end
         #gnuplot for normal VT#######################################################################################
         gnuplot = Numo::Gnuplot.new
         #set terminal and output
-        @path_of_simul = "image_charts/sim_r:#{@r}_a:#{@a}_s:#{@s}_b:#{@b}_for_t_m_a_x:#{@trange[1]}_dt:#{@dt}.png"
+        @path_of_simul = "image_charts/sim_r:#{@r}_a:#{@a}_s:#{@s}_c:#{@c}_for_t_m_a_x:#{@trange[1]}_dt:#{@dt}.png"
         gnuplot.set terminal: :pngcairo, size: [3000, 1000]
         gnuplot.set output: [@path_of_simul]
         #set title
-        gnuplot.set title:"Simulation\nparameters =>  r:#{@r}  a:#{@a}  s:#{@s}  b:#{@b}  t_m_a_x:#{@trange[1]}  dt:#{@dt} ", font: "Times Italic, 50"
+        gnuplot.set title:"Simulation\nparameters =>  r:#{@r}  a:#{@a}  s:#{@s}  c:#{@c}  t_m_a_x:#{@trange[1]}  dt:#{@dt} ", font: "Times Italic, 50"
         #set axis
         gnuplot.set grid:true, lw: 8
         gnuplot.set border: 3
@@ -185,7 +185,7 @@ end
         gnuplot.plot [@t, @v, w:"linespoints", pt: 6, lt: {rgb: '#5e9c36', lw:2}, t:"Preys"],
                      [@t, @p, w:"linespoints", pt: 1, lt: {rgb: '#8b1a0e', lw:2}, t:"Predators"]
         
-        @path_of_phase = "image_charts/phase_r:#{@r}_a:#{@a}_s:#{@s}_b:#{@b}_for_t_m_a_x:#{@trange[1]}_dt:#{@dt}.png"
+        @path_of_phase = "image_charts/phase_r:#{@r}_a:#{@a}_s:#{@s}_c:#{@c}_for_t_m_a_x:#{@trange[1]}_dt:#{@dt}.png"
         #gnuplot for normal VT Phase###############################################################################
         gnuplot = Numo::Gnuplot.new
         #set terminal and output
@@ -206,14 +206,14 @@ end
         gnuplot.set key_off: true
         #plot data
         gnuplot.plot @v, @p, w:"lines", lt: {rgb:"#E9B644", lw:1}
-        @path_of_simul_lim_env = "image_charts/sim_r:#{@r}_a:#{@a}_s:#{@s}_b:#{@b}_for_t_m_a_x:#{@trange[1]}_dt:#{@dt}_k:#{@k}.png"
+        @path_of_simul_lim_env = "image_charts/sim_r:#{@r}_a:#{@a}_s:#{@s}_c:#{@c}_for_t_m_a_x:#{@trange[1]}_dt:#{@dt}_k:#{@k}.png"
         #gnuplot for limitation of the environment###################################################################
         gnuplot = Numo::Gnuplot.new
         #set terminal and output
         gnuplot.set terminal: :pngcairo, size: [3000, 1000]
         gnuplot.set output: [@path_of_simul_lim_env]
         #set title
-        gnuplot.set title:"Simulation with limitation of the environment\nparameters =>    r:#{@r}    a:#{@a}    s:#{@s}    b:#{@b}    for t_m_a_x:#{@trange[1]}    dt:#{@dt}    K:#{@k}", font: "Times Italic, 50"
+        gnuplot.set title:"Simulation with limitation of the environment\nparameters =>    r:#{@r}    a:#{@a}    s:#{@s}    c:#{@c}    for t_m_a_x:#{@trange[1]}    dt:#{@dt}    K:#{@k}", font: "Times Italic, 50"
         #set axis
         gnuplot.set grid:true, lw: 8
         gnuplot.set border: 3
@@ -230,7 +230,7 @@ end
         #plot data
         gnuplot.plot [@t, @v_lim_env, w: "linespoints", pt: 6, lt: {rgb: '#5e9c36', lw:2}, t:"Preys"],
                      [@t, @p_lim_env, w: "linespoints", pt: 1, lt: {rgb: '#8b1a0e', lw:2}, t:"Predators"]
-        @path_of_phase_lim_env = "image_charts/phase_r:#{@r}_a:#{@a}_s:#{@s}_b:#{@b}_for_t_m_a_x:#{@trange[1]}_dt:#{@dt}_k:#{@k}.png"
+        @path_of_phase_lim_env = "image_charts/phase_r:#{@r}_a:#{@a}_s:#{@s}_c:#{@c}_for_t_m_a_x:#{@trange[1]}_dt:#{@dt}_k:#{@k}.png"
         #gnuplot for limitation of the environment Phase##############################################################
         gnuplot = Numo::Gnuplot.new
         #set terminal and output
