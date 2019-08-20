@@ -3,9 +3,12 @@ Aplikacja okienkowa Shoes, Ruby. Podstawowy model Lotki-Volterry oraz zmodyfikow
 
 
 -W oknie aplikacji należy uzupełniać parametry wyłącznie liczbami, a jako separator stosować kropkę.
-\n-Przyciski używać należy od lewej do prawej strony, bez pośpiechu.
-\n-Kliknięcie na tło wykresu skutkuje otworzeniem nowego okna zawierającego odpowiadający symulacji portret fazowy.
-\n-Zwieńczenie symulacji przyciskiem "plot it!" skutkuje nie tylko przedstawieniem wykresów, ale również zapisaniem ich do folderu, dzięki czemu wyniki dla każdego dobranego zestawu parametrów zostaną zachowane w postaci czterech wykresów, po dwa odpowiadające za symulację z ograniczeniem środowiska dla ofiar i bez.
+
+-Przyciski używać należy od lewej do prawej strony, bez pośpiechu.
+
+-Kliknięcie na tło wykresu skutkuje otworzeniem nowego okna zawierającego odpowiadający symulacji portret fazowy.
+
+-Zwieńczenie symulacji przyciskiem "plot it!" skutkuje nie tylko przedstawieniem wykresów, ale również zapisaniem ich do folderu, dzięki czemu wyniki dla każdego dobranego zestawu parametrów zostaną zachowane w postaci czterech wykresów, po dwa odpowiadające za symulację z ograniczeniem środowiska dla ofiar i bez.
 
 Aktualna wersja projektu wymaga środowiska Shoes 3 do uruchomienia aplikacji.
 
