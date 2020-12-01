@@ -10,10 +10,13 @@
 * Zwieńczenie symulacji przyciskiem "plot it!" skutkuje nie tylko przedstawieniem wykresów, ale również zapisaniem ich do folderu, dzięki czemu wyniki dla każdego dobranego zestawu parametrów zostaną zachowane w postaci czterech wykresów, po dwa odpowiadające za symulację z ograniczeniem środowiska dla ofiar i bez.
 * Wszystkie potrzebne foldery zostały uwzględnione w tym repozytorium, aplikacja wymaga do użytku:
 	* instalacji butów 3.3.6 np. stąd: [oficjalne źródło](https://walkabout.mvmanila.com/public/shoes/)
-	* zainstalowaniem gemu "numo-gnuplot" zgodnie z instrukcją w dokumencie w folderze "sprawozdanie" (to kilka kliknięć)
+	* zainstalowania gemu "numo-gnuplot" zgodnie z instrukcją w dokumencie, w folderze "sprawozdanie" (to kilka kliknięć)
 	* posiadanie zainstalowanego programu gnuplot
 
-
+## Krótki film, jak to działa
 [![example](https://img.youtube.com/vi/kVWY6kIuqqo/0.jpg)](https://www.youtube.com/watch?v=kVWY6kIuqqo "example")
+
+
+### Wersja bez GUI
 
 >Wersja skryptowa wymagająca jedynie interpretera z pewnymi gemami zawarta jest w folderze MyLotka-Volterra, w pliku small_main_K.rb
