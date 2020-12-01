@@ -2,60 +2,60 @@
 # encoding: utf-8
 require 'numo/gnuplot'
 
-class Miaona
+class LVmodel
   attr_reader :v, :p, :t, :r, :a, :s, :c, :trange, :dt, :p_lim_env, :v_lim_env, :k
 
   def initialize(r:, a:, s:, c:, trange:, dt:, p_init:, v_init:, k:)
-    @r = r.to_f#1.10   rozrodczość ofiar V
-    @a = a.to_f#0.01   skuteczność drapieżnika
-    @s = s.to_f#3.10    śmiertelność
-    @c = c.to_f#b*a#1.15   biomasa => b * a = wzrost drapieżników p
-    @trange = trange#[0.0, 30.0]
-    @dt = dt.to_f#0.1
-    @P_init = p_init.to_f#101.0
-    @V_init = v_init.to_f#125.0
-    @v = []
-    @p_lim_env = []
-    @v_lim_env = []
-    @p = []
-    @t = []
-    @k = k.to_f#pojemność środowiska
-    solveit
+    @r = r.to_f # 1.10   rozrodczość ofiar V
+    @a = a.to_f # 0.01   skuteczność drapieżnika
+    @s = s.to_f # 3.10    śmiertelność
+    @c = c.to_f # b*a # 1.15   biomasa => b * a = wzrost drapieżników p
+    @trange = trange # [0.0, 30.0] # czas symulacji
+    @dt = dt.to_f # 0.1		krok symulacji
+    @P_init = p_init.to_f # 101.0	wartość początkowa, liczebność drapieżników
+    @V_init = v_init.to_f # 125.0	wartość początkowa, liczebność ofiar
+    @v = [] # tu będzie tablica z liczebnością ofiar
+    @p_lim_env = [] # tablica z liczebnością drapieżników w modelu z ograniczeniem środowiska dla ofiar
+    @v_lim_env = [] # tablica z liczebnością ofiar w modelu z ograniczeniem środowiska dla ofiar
+    @p = [] # a tutaj będzie tablica z liczebnością drapieżników
+    @t = [] # wektor czasu
+    @k = k.to_f # pojemność środowiska
+    
+    solve_it
   end
 
-  def f_lim_env(v, p)
+  def calc_step_lim_env(v, p)
     dvdt =  @r*v*(1.0-(v/@k))-@a*v*p
-    dpdt =  -@s*p+@c*v*p #-@s*p+@a*@b*v*p
+    dpdt =  -@s*p+@c*v*p	#-@s*p+@a*@b*v*p
     return dvdt, dpdt
   end
 
-  def f(v, p)
+  def calc_step(v, p)
     dvdt =  @r*v-@a*v*p
-    dpdt =  -@s*p+@c*v*p                  #-@s*p+@a*@b*v*p
+    dpdt =  -@s*p+@c*v*p	#-@s*p+@a*@b*v*p
     return dvdt, dpdt
   end
 
   def dormand_price_two_equations(v, p, v_lim_env, p_lim_env)
-    vk1, pk1 = self.f(v, p)
-    vk2, pk2 = self.f(v + vk1 * @dt/2.0, p + pk1 * @dt/2.0)
-    vk3, pk3 = self.f(v + vk2 * @dt/2.0, p + pk2 * @dt/2.0)
-    vk4, pk4 = self.f(v + vk3 * @dt    , p + pk3 * @dt)
+    vk1, pk1 = self.calc_step(v, p)
+    vk2, pk2 = self.calc_step(v + vk1 * @dt/2.0, p + pk1 * @dt/2.0)
+    vk3, pk3 = self.calc_step(v + vk2 * @dt/2.0, p + pk2 * @dt/2.0)
+    vk4, pk4 = self.calc_step(v + vk3 * @dt    , p + pk3 * @dt)
 
     vnew = v + (vk1 + 2.0 * vk2 + 2.0 * vk3 + vk4) * @dt/6.0
     pnew = p + (pk1 + 2.0 * pk2 + 2.0 * pk3 + pk4) * @dt/6.0
     #_lim_env
-    vk1_lim_env, pk1_lim_env = self.f_lim_env(v_lim_env, p_lim_env)
-    vk2_lim_env, pk2_lim_env = self.f_lim_env(v_lim_env + vk1_lim_env * @dt/2.0, p_lim_env + pk1_lim_env * @dt/2.0)
-    vk3_lim_env, pk3_lim_env = self.f_lim_env(v_lim_env + vk2_lim_env * @dt/2.0, p_lim_env + pk2_lim_env * @dt/2.0)
-    vk4_lim_env, pk4_lim_env = self.f_lim_env(v_lim_env + vk3_lim_env * @dt    , p_lim_env + pk3_lim_env * @dt)
+    vk1_lim_env, pk1_lim_env = self.calc_step_lim_env(v_lim_env, p_lim_env)
+    vk2_lim_env, pk2_lim_env = self.calc_step_lim_env(v_lim_env + vk1_lim_env * @dt/2.0, p_lim_env + pk1_lim_env * @dt/2.0)
+    vk3_lim_env, pk3_lim_env = self.calc_step_lim_env(v_lim_env + vk2_lim_env * @dt/2.0, p_lim_env + pk2_lim_env * @dt/2.0)
+    vk4_lim_env, pk4_lim_env = self.calc_step_lim_env(v_lim_env + vk3_lim_env * @dt    , p_lim_env + pk3_lim_env * @dt)
     vnew_lim_env = v_lim_env + (vk1_lim_env + 2.0 * vk2_lim_env + 2.0 * vk3_lim_env + vk4_lim_env) * @dt/6.0
     pnew_lim_env = p_lim_env + (pk1_lim_env + 2.0 * pk2_lim_env + 2.0 * pk3_lim_env + pk4_lim_env) * @dt/6.0
-
 
     return vnew, pnew, vnew_lim_env, pnew_lim_env
   end
 
-  def solveit()
+  def solve_it()
     @v[0] = @V_init
     @p[0] = @P_init
     @v_lim_env[0] = @V_init
@@ -69,13 +69,15 @@ class Miaona
 
 end
 
-@app=Shoes.app(title: "Small Lotka-Volterra App", height: 850, width: 850, resizable: true) do
+@app=Shoes.app(title: "Small Lotka-Volterra App", height: 970, width: 850, resizable: true) do
   background darkslategray
-def center(elem)
-  top=(elem.parent.height-elem.style[:height])/2
-  left=(elem.parent.width-elem.style[:width])/2
-  elem.move(left,top)
-end
+	
+	def center(elem)
+  	top=(elem.parent.height - elem.style[:height]) / 2
+  	left=(elem.parent.width - elem.style[:width]) / 2
+  	elem.move(left,top)
+	end
+	
   @path_of_phase = "image_start/phase.png"
   @path_of_phase_lim_env = "image_start/phase_lim_env.png"
   @path_of_simul = "image_start/simul.png"
@@ -95,29 +97,27 @@ end
     @Simulation.height = h
     @Simulation_lim_env.width = self.width
     @Simulation_lim_env.height = h
-    #w = (0.1*self.width).to_i
-    #@stack_edit_lines.margin_right = w
-    #@stack_edit_lines.margin_left = w
-    center(@stack_edit_lines)
   end
   
   @stack_edit_lines = stack do
     flow do # flow of editing parameters
-      para "r = ", stroke: white
+      para "reproduction: r = ", stroke: white
       @param_r = edit_line width: @width_of_edit_line, height: 30 
       @param_r.text = "1.1"
-      para "a = ", stroke: white
+      para "effectiveness of the predator: a = ", stroke: white
       @param_a = edit_line width: @width_of_edit_line, height: 30
       @param_a.text = "0.01"
-      para "s = ", stroke: white
-      @param_s = edit_line width: @width_of_edit_line, height: 30
-      @param_s.text = "0.1" 
-      para "c = ", stroke: white
-      @param_c = edit_line width: @width_of_edit_line, height: 30
-      @param_c.text = "0.1"
-      para "k = ", stroke: white
+      para "environmental capacity: k = ", stroke: white
       @param_k = edit_line width: @width_of_edit_line, height: 30
-      @param_k.text = "10000" 
+      @param_k.text = "10000"
+    end
+    flow do
+      para "predator mortality: s = ", stroke: white
+      @param_s = edit_line width: @width_of_edit_line, height: 30
+      @param_s.text = "0.1"
+      para "predator growth (a*b), where b is biomass: c = ", stroke: white
+      @param_c = edit_line width: @width_of_edit_line, height: 30
+      @param_c.text = "0.001"
     end
     flow do
       para "time simulation = (", stroke: white
@@ -132,15 +132,17 @@ end
       @param_dt.text = "0.1"
     end
     flow do
-      para "Initial value P = ", stroke: white
+      para "Initial population of Predators = ", stroke: white
       @param_init_p = edit_line width: @width_of_edit_line, height: 30
       @param_init_p.text = "101.0" 
-      para "Initial value V = ", stroke: white
+      para "Initial population of Victims = ", stroke: white
       @param_init_v = edit_line width: @width_of_edit_line, height: 30
       @param_init_v.text = "125.0" 
+
     end
   end
-###################################### buttons
+
+# Buttons
   flow margin_top: 12, margin_bottom: 12 do #1
 
     @button_save_parameters = button "Save parameters!" do 
@@ -149,9 +151,9 @@ end
     end
 
     @button_calculate_simulation = button "Calculate simulation!" do 
-      s = Miaona.new(r: @r, a: @a, s: @s, c: @c, 
-                     trange: @trange, dt: @dt, 
-                     p_init: @p_init, v_init: @v_init, k: @k)
+      s = LVmodel.new(r: @r, a: @a, s: @s, c: @c, 
+      								trange: @trange, dt: @dt, 
+      								p_init: @p_init, v_init: @v_init, k: @k)
       @v, @p, @t, @v_lim_env, @p_lim_env = s.v, s.p, s.t, s.v_lim_env, s.p_lim_env
 
       @Plotting_flag = true
